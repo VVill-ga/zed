@@ -750,6 +750,7 @@ pub async fn open_remote_project(
                             workspace.project().read(cx).worktree_store(),
                             None::<RemoteConnectionOptions>,
                             None,
+                            None,
                             cx,
                         );
                     })

@@ -16,6 +16,7 @@ use gpui::{
 
 use language::{CursorShape, Point};
 use markdown::{Markdown, MarkdownElement, MarkdownStyle};
+use project::trusted_worktrees;
 use release_channel::ReleaseChannel;
 use remote::{
     ConnectionIdentifier, RemoteClient, RemoteConnection, RemoteConnectionOptions, RemotePlatform,
@@ -602,6 +603,7 @@ pub async fn open_remote_project(
                 app_state.languages.clone(),
                 app_state.fs.clone(),
                 None,
+                false,
                 cx,
             );
             cx.new(|cx| {
@@ -738,11 +740,20 @@ pub async fn open_remote_project(
                     continue;
                 }
 
-                if created_new_window {
-                    window
-                        .update(cx, |_, window, _| window.remove_window())
-                        .ok();
-                }
+                window
+                    .update(cx, |workspace, window, cx| {
+                        if created_new_window {
+                            window.remove_window();
+                        }
+                        // TODO kb remote modal also leaks actions, so this is not secure?
+                        trusted_worktrees::init_global(
+                            workspace.project().read(cx).worktree_store(),
+                            None::<RemoteConnectionOptions>,
+                            None,
+                            cx,
+                        );
+                    })
+                    .ok();
             }
 
             Ok(items) => {
